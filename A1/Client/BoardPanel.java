@@ -1,9 +1,9 @@
 package A1.Client;
 
-import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
 
 public class BoardPanel extends JPanel {
 
@@ -71,12 +71,17 @@ public class BoardPanel extends JPanel {
 
     private Color mapColour(String c) {
         String s = c.toLowerCase();
-        switch (s) {
-            case "red": return new Color(255, 220, 220);
-            case "green": return new Color(220, 255, 220);
-            case "yellow": return new Color(255, 255, 200);
-            case "white": return Color.WHITE;
-            default: return new Color(230, 230, 230);
-        }
+    switch (s) {
+        case "red": return new Color(255, 220, 220);
+        case "green": return new Color(220, 255, 220);
+        case "yellow": return new Color(255, 255, 200);
+        case "white": return Color.WHITE;
+        case "blue": return new Color(200, 220, 255);
+        case "pink": return new Color(255, 200, 230);
+        case "orange": return new Color(255, 220, 180);
+        case "purple": return new Color(230, 200, 255);
+        case "cyan": return new Color(200, 255, 255);
+        default: return new Color(230, 230, 230);
+    }
     }
 }
