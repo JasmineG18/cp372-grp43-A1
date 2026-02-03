@@ -1,0 +1,82 @@
+package A1.Client;
+
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class BoardPanel extends JPanel {
+
+    private int boardW = 200, boardH = 100;
+    private int noteW = 20, noteH = 10;
+
+    private List<ClientNote> notes = new ArrayList<>();
+
+    public BoardPanel() {
+        setPreferredSize(new Dimension(700, 350));
+    }
+
+    public void setDimensions(int boardW, int boardH, int noteW, int noteH) {
+        this.boardW = boardW;
+        this.boardH = boardH;
+        this.noteW = noteW;
+        this.noteH = noteH;
+        repaint();
+    }
+
+    public void setNotes(List<ClientNote> notes) {
+        this.notes = new ArrayList<>(notes);
+        repaint();
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        // background + border
+        g.setColor(new Color(245, 245, 245));
+        g.fillRect(0, 0, getWidth(), getHeight());
+
+        g.setColor(Color.DARK_GRAY);
+        g.drawRect(5, 5, getWidth() - 10, getHeight() - 10);
+
+        double sx = (getWidth() - 10.0) / boardW;
+        double sy = (getHeight() - 10.0) / boardH;
+
+        for (ClientNote n : notes) {
+            int px = 5 + (int) Math.round(n.x * sx);
+            int py = 5 + (int) Math.round(n.y * sy);
+            int pw = (int) Math.round(noteW * sx);
+            int ph = (int) Math.round(noteH * sy);
+
+            g.setColor(mapColour(n.colour));
+            g.fillRect(px, py, pw, ph);
+
+            g.setColor(Color.BLACK);
+            g.drawRect(px, py, pw, ph);
+
+            // pin marker
+            if (n.pinned) {
+                g.setColor(Color.RED);
+                g.fillOval(px + pw - 10, py + 2, 8, 8);
+            }
+
+            // message text (simple truncation)
+            g.setColor(Color.BLACK);
+            String msg = n.message;
+            if (msg.length() > 25) msg = msg.substring(0, 25) + "...";
+            g.drawString(msg, px + 4, py + 14);
+        }
+    }
+
+    private Color mapColour(String c) {
+        String s = c.toLowerCase();
+        switch (s) {
+            case "red": return new Color(255, 220, 220);
+            case "green": return new Color(220, 255, 220);
+            case "yellow": return new Color(255, 255, 200);
+            case "white": return Color.WHITE;
+            default: return new Color(230, 230, 230);
+        }
+    }
+}
