@@ -1,5 +1,3 @@
-package A1.Client;
-
 public class ClientNote {
     public final int x, y;
     public final String colour;

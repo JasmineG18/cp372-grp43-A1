@@ -1,7 +1,5 @@
-package A1.Server;
-
-import java.net.*;
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 public class BBoard {

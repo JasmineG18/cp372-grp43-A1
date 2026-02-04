@@ -1,5 +1,3 @@
-package A1.Server;
-
 import java.util.*;
 
 public class Board {
@@ -46,6 +44,8 @@ public class Board {
 
     public synchronized String pin(String cmd) throws ProtocolException {
         String[] p = cmd.split(" ");
+        if (p.length != 3) throw Errors.INVALID_FORMAT.exception();
+
         int x = Integer.parseInt(p[1]);
         int y = Integer.parseInt(p[2]);
 
@@ -62,6 +62,8 @@ public class Board {
 
     public synchronized String unpin(String cmd) throws ProtocolException {
         String[] p = cmd.split(" ");
+        if (p.length != 3) throw Errors.INVALID_FORMAT.exception();
+
         int x = Integer.parseInt(p[1]);
         int y = Integer.parseInt(p[2]);
 

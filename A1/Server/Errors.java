@@ -1,5 +1,3 @@
-package A1.Server;
-
 public enum Errors {
     INVALID_FORMAT,
     OUT_OF_BOUNDS,

@@ -1,5 +1,3 @@
-package A1.Server;
-
 import java.util.*;
 
 public class Note {
