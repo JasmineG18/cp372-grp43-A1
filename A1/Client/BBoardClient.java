@@ -5,23 +5,31 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 
+//Cleint for the Bulletin Board system which handles user interface, networking, and visual display
+
 public class BBoardClient extends JFrame {
 
+    // Network communication objects
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
 
+    //UI components
     private JTextArea output = new JTextArea(15, 40);
     private BoardPanel boardPanel = new BoardPanel();
 
+    //Board dimensions received from the server handshake
     private int boardW, boardH, noteW, noteH;
 
+    //GUI and event handlers
     public BBoardClient() {
         setTitle("Bulletin Board Client");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
+        //Output text area is read-only
         output.setEditable(false);
 
+        //Control buttons
         JButton connectBtn = new JButton("Connect");
         JButton postBtn = new JButton("POST");
         JButton getBtn = new JButton("GET");
@@ -30,6 +38,7 @@ public class BBoardClient extends JFrame {
         JButton shakeBtn = new JButton("SHAKE");
         JButton clearBtn = new JButton("CLEAR");
 
+        //Button panel
         JPanel buttons = new JPanel();
         buttons.add(connectBtn);
         buttons.add(postBtn);
@@ -39,6 +48,7 @@ public class BBoardClient extends JFrame {
         buttons.add(shakeBtn);
         buttons.add(clearBtn);
 
+        // split view for board on top, output log on bottom
         JSplitPane split = new JSplitPane(
                 JSplitPane.VERTICAL_SPLIT,
                 boardPanel,
@@ -48,6 +58,7 @@ public class BBoardClient extends JFrame {
         add(split, BorderLayout.CENTER);
         add(buttons, BorderLayout.SOUTH);
 
+        //Button actions
         connectBtn.addActionListener(e -> connect());
         postBtn.addActionListener(e -> doPost());
         getBtn.addActionListener(e -> sendAndDisplay("GET"));
@@ -61,9 +72,10 @@ public class BBoardClient extends JFrame {
         setVisible(true);
     }
 
+    // Connects Client to server and processes the handshake
     private void connect() {
         try {
-            // Basic connect dialog (so you’re not hardcoded)
+            // prompt user for host and port
             JTextField hostF = new JTextField("localhost");
             JTextField portF = new JTextField("4554");
             Object[] fields = {"Host:", hostF, "Port:", portF};
@@ -74,24 +86,28 @@ public class BBoardClient extends JFrame {
             String host = hostF.getText().trim();
             int port = Integer.parseInt(portF.getText().trim());
 
+            //Open socket and streams
             socket = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
 
-            // Handshake is the FIRST line the server sends after connect
+            // Read hankshake line from server
             String handshake = in.readLine();
             output.append("Connected: " + handshake + "\n");
 
+            //Parse board dimensions and configue display
             parseHandshake(handshake);
             boardPanel.setDimensions(boardW, boardH, noteW, noteH);
 
-            refreshBoard(); // draw existing notes (if any)
+            //Load any existing notes
+            refreshBoard(); 
         } catch (Exception e) {
             output.append("Connection failed: " + e.getMessage() + "\n");
             closeSocket();
         }
     }
 
+    // Handles POST command input and send it to the server
     private void doPost() {
         if (!isConnected()) {
             output.append("Not connected.\n");
@@ -107,12 +123,14 @@ public class BBoardClient extends JFrame {
         int ok = JOptionPane.showConfirmDialog(this, fields, "POST", JOptionPane.OK_CANCEL_OPTION);
         if (ok != JOptionPane.OK_OPTION) return;
 
+        //Build POST command in format POST x y colour message
         String cmd = "POST " + xF.getText().trim() + " " + yF.getText().trim() + " "
                 + colourF.getText().trim() + " " + msgF.getText();
 
         sendAndDisplay(cmd);
     }
 
+    //Handles PIN and UNPIN commands
     private void doPin(boolean pin) {
         if (!isConnected()) {
             output.append("Not connected.\n");
@@ -130,6 +148,7 @@ public class BBoardClient extends JFrame {
         sendAndDisplay(cmd);
     }
 
+    //Send a command to server and display the response
     private void sendAndDisplay(String cmd) {
         if (!isConnected()) {
             output.append("Not connected.\n");
@@ -140,7 +159,7 @@ public class BBoardClient extends JFrame {
             output.append(">> " + cmd + "\n");
             out.println(cmd);
 
-            // Read a full response block (handles multi-line GET)
+            // Read the server response (supports multi-line GET)
             List<String> lines = readResponseBlock();
 
             for (String s : lines) output.append(s + "\n");
@@ -157,6 +176,7 @@ public class BBoardClient extends JFrame {
         }
     }
 
+    //Refreshes the board display by issuing a GET command
     private void refreshBoard() {
         if (!isConnected()) return;
 
@@ -165,12 +185,13 @@ public class BBoardClient extends JFrame {
 
             List<String> lines = readResponseBlock();
 
-            // If GET returns OK ... then no notes
+            // If GET returns OK, then no notes
             if (lines.size() == 1 && (lines.get(0).startsWith("OK") || lines.get(0).startsWith("ERROR"))) {
                 boardPanel.setNotes(new ArrayList<>());
                 return;
             }
 
+            //Parse note lines
             List<ClientNote> parsed = new ArrayList<>();
             for (String line : lines) {
                 ClientNote n = parseNoteLine(line);
@@ -180,13 +201,13 @@ public class BBoardClient extends JFrame {
             boardPanel.setNotes(parsed);
 
         } catch (Exception ignored) {
-            // If refresh fails, just don’t repaint
+            // Fail silently on refresh
         }
     }
 
+    //Reads a full server response block, including multi-line GET responses
     private List<String> readResponseBlock() throws IOException {
-        // We read the first line normally, then keep reading quickly for any extra lines.
-        // This works with your server returning multi-line GET results (each line in the same response string).
+       
         List<String> lines = new ArrayList<>();
 
         String first = in.readLine();
@@ -194,10 +215,10 @@ public class BBoardClient extends JFrame {
 
         lines.add(first);
 
-        // If it’s a simple one-line OK/ERROR, we’re done
+        // Single line responses
         if (first.startsWith("OK") || first.startsWith("ERROR")) return lines;
 
-        // Otherwise, it’s likely a multi-line data response. Read remaining lines with short timeout.
+        // attempt to read additional lines with short timeout
         int oldTimeout = socket.getSoTimeout();
         socket.setSoTimeout(80);
 
@@ -218,6 +239,7 @@ public class BBoardClient extends JFrame {
         return lines;
     }
 
+    //Parses handshake data sent by the server
     private void parseHandshake(String handshake) {
         // handshake format: "boardW boardH noteW noteH colour1 colour2 ..."
         String[] p = handshake.trim().split("\\s+");
@@ -227,6 +249,7 @@ public class BBoardClient extends JFrame {
         noteH  = Integer.parseInt(p[3]);
     }
 
+    //Converts a server note line into a ClientNote object
     private ClientNote parseNoteLine(String line) {
         // expected: x y colour PINNED|UNPINNED message...
         try {
@@ -245,10 +268,12 @@ public class BBoardClient extends JFrame {
         }
     }
 
+    //Checks whether the client is currently connected
     private boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
+    //Closes all network resources safely
     private void closeSocket() {
         try { if (in != null) in.close(); } catch (Exception ignored) {}
         try { if (out != null) out.close(); } catch (Exception ignored) {}
@@ -258,6 +283,7 @@ public class BBoardClient extends JFrame {
         socket = null;
     }
 
+    //Main
     public static void main(String[] args) {
         SwingUtilities.invokeLater(BBoardClient::new);
     }
