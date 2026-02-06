@@ -77,14 +77,42 @@ public class BoardPanel extends JPanel {
                 g.fillOval(px + pw - 10, py + 2, 8, 8);
             }
 
-            // write note message and truncate if too long
+            // write note message and wrap text if too long
             g.setColor(Color.BLACK);
-            String msg = n.message;
-            if (msg.length() > 25) msg = msg.substring(0, 25) + "...";
-            g.drawString(msg, px + 4, py + 14);
+            drawWrappedText(g, n.message, px + 4, py + 14, pw - 8, ph - 6);
+
         }
     }
 
+    // wrap text to fit note
+    private void drawWrappedText(Graphics g, String text, int x, int y, int maxWidth, int maxHeight) {
+        FontMetrics fm = g.getFontMetrics();
+        int lineHeight = fm.getHeight();
+    
+        int curY = y;
+        String[] words = text.split("\\s+");
+        StringBuilder line = new StringBuilder();
+    
+        for (String word : words) {
+            String testLine = line.length() == 0 ? word : line + " " + word;
+    
+            if (fm.stringWidth(testLine) > maxWidth) {
+                // Draw current line
+                if (curY + lineHeight > y + maxHeight) return;
+                g.drawString(line.toString(), x, curY);
+                curY += lineHeight;
+                line = new StringBuilder(word);
+            } else {
+                line = new StringBuilder(testLine);
+            }
+        }
+    
+        // Draw last line
+        if (line.length() > 0 && curY + lineHeight <= y + maxHeight) {
+            g.drawString(line.toString(), x, curY);
+        }
+    }
+    
     // maps colour names sent by the server
     private Color mapColour(String c) {
         String s = c.toLowerCase();
